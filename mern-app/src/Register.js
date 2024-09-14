@@ -5,6 +5,7 @@ import { UserContext } from './UserContext';
 export default function Register() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [isLoginOrRegister, setIsLoginOrRegister] = useState('register')
     const { setLoggedInUsername, setId } = useContext(UserContext);
 
     async function register(ev) {
