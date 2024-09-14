@@ -37,9 +37,26 @@ export default function Register() {
                     placeholder="password"
                     className="block w-full rounded-sm p-2 mb-2 border"
                 />
-                <button className="bg-blue-500 text-white block w-full rounded-sm p-2">Register</button>
+                <button className="bg-blue-500 text-white block w-full rounded-sm p-2">
+                    {isLoginOrRegister === 'register' ? 'Register' : 'Login'}
+                </button>
                 <div className='text-center mt-2'>
-                    Already a member? <a href=''>Login here</a>
+                    {isLoginOrRegister === 'register' && (
+                        <div>
+                            Already a member? 
+                        <button onClick={()=> setIsLoginOrRegister('login')}>
+                            Login
+                        </button>
+                        </div>
+                    )}
+                    {isLoginOrRegister === 'login' && (
+                        <div>
+                            Don't have an account?
+                            <button onClick={()=> setIsLoginOrRegister('register')}>
+                                Register
+                            </button>
+                        </div>
+                    )}
                 </div>
             </form>
         </div>
