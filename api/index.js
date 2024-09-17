@@ -4,20 +4,20 @@ const dotenv = require('dotenv');
 const jwt = require('jsonwebtoken');
 const User = require('./models/user');
 const cors = require('cors');
-const cookieParser = require('cookie-parser')
+const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
 
 dotenv.config();
 mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
-const bcryptSalt = bcrypt.genSaltSync(10)
+const bcryptSalt = bcrypt.genSaltSync(10);
 const app = express();
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
 // Setup CORS with client URL
 app.use(cors({
     credentials: true,
-    origin: process.env.CLIENT_URL, // Make sure this is set to 'http://localhost:3000'
+    origin: process.env.CLIENT_URL, // Ensure this is 'http://localhost:3000' for your frontend
 }));
 
 // Test endpoint to ensure server is running
@@ -25,6 +25,7 @@ app.get('/test', (req, res) => {
     res.json('its alive');
 });
 
+// Profile endpoint to verify token and retrieve user data
 app.get('/profile', (req, res) => {
     const token = req.cookies?.token;
     if (token) {
@@ -33,43 +34,65 @@ app.get('/profile', (req, res) => {
                 console.error('JWT verification error:', err);
                 return res.status(403).json('Invalid token');
             }
-            res.json(userData);
+            res.json(userData);  // Send user data if token is valid
         });
     } else {
         res.status(401).json('No token provided');
     }
 });
 
-app.post('/login',async (req,res)=>{
-    const {username, password} = req.body;
-    const foundUser = await User.findOne({username});
+// Login endpoint
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const foundUser = await User.findOne({ username });
+    if (foundUser) {
+        const passOK = bcrypt.compareSync(password, foundUser.password);
+        if (passOK) {
+            // Sign JWT and send as a cookie
+            jwt.sign({ userId: foundUser._id }, process.env.JWT_SECRET, {}, (err, token) => {
+                if (err) {
+                    console.error('JWT signing error:', err);
+                    return res.status(500).json({ message: 'Error generating token' });
+                }
 
-})
+                // Set the token in the cookie and send response with user ID
+                res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' })
+                    .status(200)
+                    .json({ id: foundUser._id });
+            });
+        } else {
+            res.status(401).json({ message: 'Invalid credentials' });
+        }
+    } else {
+        res.status(401).json({ message: 'User not found' });
+    }
+});
 
 // Register endpoint
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const hashedPassword = bcrypt.hashSync(password, bcryptSalt)
+        const hashedPassword = bcrypt.hashSync(password, bcryptSalt);
         // Create a new user in the database
         const createdUser = await User.create({ 
             username: username, 
-            password: hashedPassword });
+            password: hashedPassword 
+        });
 
         // Sign a JWT token for the new user
         jwt.sign({ userId: createdUser._id }, process.env.JWT_SECRET, {}, (err, token) => {
             if (err) {
-                console.error(err);
+                console.error('JWT signing error:', err);
                 return res.status(500).json({ message: 'Error generating token' });
             }
 
-            // Set the token as a cookie and respond with user id
+            // Set the token as a cookie and respond with user ID and username
             res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production' })
                 .status(201)
                 .json({ id: createdUser._id, username });
         });
     } catch (err) {
-        console.error(err);
+        console.error('Error registering user:', err);
         res.status(500).json({ message: 'Error registering user' });
     }
 });
