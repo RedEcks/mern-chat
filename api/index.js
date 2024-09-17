@@ -26,15 +26,28 @@ app.get('/test', (req, res) => {
 });
 
 // Profile endpoint to verify token and retrieve user data
-app.get('/profile', (req, res) => {
+app.get('/profile', async (req, res) => {
     const token = req.cookies?.token;
     if (token) {
-        jwt.verify(token, process.env.JWT_SECRET, {}, (err, userData) => {
+        jwt.verify(token, process.env.JWT_SECRET, {}, async (err, userData) => {
             if (err) {
                 console.error('JWT verification error:', err);
                 return res.status(403).json('Invalid token');
             }
-            res.json(userData);  // Send user data if token is valid
+            
+            try {
+                // Query the database to find the user by the userId in the token
+                const foundUser = await User.findById(userData.userId);
+                if (!foundUser) {
+                    return res.status(404).json('User not found');
+                }
+
+                // Return the user's data (excluding sensitive fields like password)
+                res.json({ userId: foundUser._id, username: foundUser.username });
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                res.status(500).json('Error fetching user data');
+            }
         });
     } else {
         res.status(401).json('No token provided');
