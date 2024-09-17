@@ -5,10 +5,11 @@ const jwt = require('jsonwebtoken');
 const User = require('./models/user');
 const cors = require('cors');
 const cookieParser = require('cookie-parser')
+const bcrypt = require('bcryptjs');
 
 dotenv.config();
 mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
-
+const bcryptSalt = bcrypt.genSaltSync(10)
 const app = express();
 app.use(express.json());
 app.use(cookieParser())
@@ -39,12 +40,21 @@ app.get('/profile', (req, res) => {
     }
 });
 
+app.post('/login',async (req,res)=>{
+    const {username, password} = req.body;
+    const foundUser = await User.findOne({username});
+
+})
+
 // Register endpoint
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     try {
+        const hashedPassword = bcrypt.hashSync(password, bcryptSalt)
         // Create a new user in the database
-        const createdUser = await User.create({ username, password });
+        const createdUser = await User.create({ 
+            username: username, 
+            password: hashedPassword });
 
         // Sign a JWT token for the new user
         jwt.sign({ userId: createdUser._id }, process.env.JWT_SECRET, {}, (err, token) => {
