@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { UserContext } from './UserContext';
 
@@ -8,6 +8,22 @@ export default function RegisterAndLoginForm() {
     const [isLoginOrRegister, setIsLoginOrRegister] = useState('register');
     const { setLoggedInUsername, setId } = useContext(UserContext);
 
+    // Check if the user is already logged in when the component mounts
+    useEffect(() => {
+        async function checkLoginStatus() {
+            try {
+                const { data } = await axios.get('http://localhost:4000/profile', { withCredentials: true });
+                if (data) {
+                    setLoggedInUsername(data.username); // Assuming profile route returns username
+                    setId(data.userId);  // Assuming profile route returns userId
+                }
+            } catch (error) {
+                console.error('Error checking login status:', error);
+            }
+        }
+        checkLoginStatus();
+    }, [setLoggedInUsername, setId]);
+
     async function handleSubmit(ev) {
         ev.preventDefault();
         const url = isLoginOrRegister === 'register' ? 'register' : 'login';
@@ -16,7 +32,7 @@ export default function RegisterAndLoginForm() {
             setLoggedInUsername(username);
             setId(data.id);
         } catch (error) {
-            console.error('Registration failed:', error);
+            console.error('Registration/Login failed:', error);
         }
     }
 
@@ -33,7 +49,7 @@ export default function RegisterAndLoginForm() {
                 <input
                     value={password}
                     onChange={ev => setPassword(ev.target.value)}
-                    type="password"
+                    type="password" 
                     placeholder="password"
                     className="block w-full rounded-sm p-2 mb-2 border"
                 />
@@ -44,7 +60,7 @@ export default function RegisterAndLoginForm() {
                     {isLoginOrRegister === 'register' && (
                         <div>
                             Already a member? 
-                            <button onClick={() => setIsLoginOrRegister('login')}>
+                            <button onClick={()=> setIsLoginOrRegister('login')}>
                                 Login
                             </button>
                         </div>
@@ -52,7 +68,7 @@ export default function RegisterAndLoginForm() {
                     {isLoginOrRegister === 'login' && (
                         <div>
                             Don't have an account?
-                            <button onClick={() => setIsLoginOrRegister('register')}>
+                            <button onClick={()=> setIsLoginOrRegister('register')}>
                                 Register
                             </button>
                         </div>
