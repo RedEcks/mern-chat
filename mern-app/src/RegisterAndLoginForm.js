@@ -2,17 +2,17 @@ import React, { useContext, useState } from 'react';
 import axios from 'axios';
 import { UserContext } from './UserContext';
 
-export default function Register() {
+export default function RegisterAndLoginForm() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [isLoginOrRegister, setIsLoginOrRegister] = useState('register')
+    const [isLoginOrRegister, setIsLoginOrRegister] = useState('register');
     const { setLoggedInUsername, setId } = useContext(UserContext);
 
-    async function register(ev) {
+    async function handleSubmit(ev) {
         ev.preventDefault();
-
+        const url = isLoginOrRegister === 'register' ? 'register' : 'login';
         try {
-            const { data } = await axios.post('http://localhost:4000/register', { username, password }, { withCredentials: true });
+            const { data } = await axios.post(`http://localhost:4000/${url}`, { username, password }, { withCredentials: true });
             setLoggedInUsername(username);
             setId(data.id);
         } catch (error) {
@@ -22,7 +22,7 @@ export default function Register() {
 
     return (
         <div className="bg-blue-50 h-screen flex items-center">
-            <form className="w-64 mx-auto mb-12" onSubmit={register}>
+            <form className="w-64 mx-auto mb-12" onSubmit={handleSubmit}>
                 <input
                     value={username}
                     onChange={ev => setUsername(ev.target.value)}
@@ -33,7 +33,7 @@ export default function Register() {
                 <input
                     value={password}
                     onChange={ev => setPassword(ev.target.value)}
-                    type="password" // Use type="password" for password fields
+                    type="password"
                     placeholder="password"
                     className="block w-full rounded-sm p-2 mb-2 border"
                 />
@@ -44,15 +44,15 @@ export default function Register() {
                     {isLoginOrRegister === 'register' && (
                         <div>
                             Already a member? 
-                        <button onClick={()=> setIsLoginOrRegister('login')}>
-                            Login
-                        </button>
+                            <button onClick={() => setIsLoginOrRegister('login')}>
+                                Login
+                            </button>
                         </div>
                     )}
                     {isLoginOrRegister === 'login' && (
                         <div>
                             Don't have an account?
-                            <button onClick={()=> setIsLoginOrRegister('register')}>
+                            <button onClick={() => setIsLoginOrRegister('register')}>
                                 Register
                             </button>
                         </div>
