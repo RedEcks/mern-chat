@@ -6,6 +6,7 @@ const User = require('./models/user');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcryptjs');
+const ws = require('ws')
 
 dotenv.config();
 mongoose.connect(process.env.MONGO_URL, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -110,6 +111,12 @@ app.post('/register', async (req, res) => {
     }
 });
 
-app.listen(4000, () => {
+const server = app.listen(4000, () => {
     console.log('Server is running on http://localhost:4000');
 });
+
+const wss = new ws.WebSocketServer({server})
+
+wss.on('connection', (connection) =>{
+    console.log('connected')
+})
