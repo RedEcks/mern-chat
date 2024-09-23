@@ -117,6 +117,27 @@ const server = app.listen(4000, () => {
 
 const wss = new ws.WebSocketServer({server})
 
-wss.on('connection', (connection) =>{
-    console.log('connected')
+wss.on('connection', (connection, req) =>{
+   const cookies = req.headers.cookie;
+   if(cookies){
+    const tokenCookieString = cookies.split(';').find(str => str.startsWith('token='))
+    if(tokenCookieString){
+        const token = tokenCookieString.split('=')[1];
+        if(token){
+            jwt.verify(token, process.env.JWT_SECRET, {}, (err, userData)=>{
+                if(err) throw err;
+                const {userId, username} = userData;
+                connection.userId = userId;
+                connection.username = username;
+            })
+        }
+    }
+   }
+   [...wss.clients].forEach(client => {
+    client.send(JSON.stringify({
+        online: [...wss.clients].map(c =>({userId:c.userId, username:c.username}))
+    }
+        
+    ))
+   })
 })
